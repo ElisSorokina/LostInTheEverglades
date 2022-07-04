@@ -1,9 +1,14 @@
 #include <iostream>
-
+#include <stdlib.h>
 void printRules();
+void startGame();
+
+void initGameMatrix(char matrix[][5]);
+void updateGameMatrix(char matrix[][5], int currentX, int currentY, int nextX, int nextY);
+void printMatrix(char matrix[][5]);
 
 using namespace std;
-
+const int ASCII_ZERO_CODE=48;
 int main() {
     char number;
 
@@ -23,7 +28,7 @@ int main() {
                 printRules();
                 break;
             case '2':
-                //implement game
+                startGame();
                 break;
             case '3':
                 //exit
@@ -67,4 +72,60 @@ void printRules(){
           "The ranger rescues the group of tourists.\n"
           "The time expires and the fate of the tourists is forever unknown.\n"
           "---------------------------------------\n";//implement rules
+}
+void startGame(){
+    char matrix[5][5];
+
+    initGameMatrix(matrix);
+
+    printMatrix(matrix);
+    cout<< "Gongs left: 12"<<endl;
+    int currentX = 0;
+    int currentY = 0;
+    int nextX = 0;
+    int nextY = 0;
+    char nextInput[2];
+    while(true){
+        cout<<"Enter next cell (row & column): "<< endl;
+        cin>> nextInput[0]>>nextInput[1];
+        cin.ignore(numeric_limits<streamsize>::max(),'\n');
+        nextX = (nextInput[0])-ASCII_ZERO_CODE;
+        nextY = (nextInput[1])-ASCII_ZERO_CODE;
+        if(nextX-currentX>1|| nextY-currentY>1){
+            cout<<"Nice try! You can move to adjacent cells only."<<endl;
+
+            continue;
+        }
+        updateGameMatrix(matrix, currentX, currentY, nextX, nextY);
+        printMatrix(matrix);
+        currentX = nextX;
+        currentY = nextY;
+
+
+    }
+
+}
+
+void printMatrix(char matrix[][5]) {
+    cout<< "   0  1  2  3  4  "<<endl;
+    for (int i = 0; i < 5; i++) {
+        cout<<i<<"  ";
+        for (int j = 0; j < 5; j++) {
+
+            cout << matrix[i][j] << "  ";
+        }
+        cout << endl;
+    }
+}
+
+void initGameMatrix(char matrix[][5]) {
+    for (int i = 0; i < 5 ; i++)
+        for (int j = 0; j < 5; j++)
+            matrix[i][j] = '*';
+    matrix[0][0]='R';
+    matrix[4][4]='T';
+}
+void updateGameMatrix(char matrix[][5], int currentX, int currentY, int nextX, int nextY){
+    matrix[currentX][currentY] = ' ';
+    matrix[nextX][nextY] = 'R';
 }

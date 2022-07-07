@@ -1,5 +1,6 @@
 #include <iostream>
-#include <stdlib.h>
+#include <random>
+#include <cstdlib>
 
 const int DIMENSIONS = 5;
 const int MOB_NUMBER = 10;
@@ -16,11 +17,13 @@ void updateGameMatrix(char matrix[][DIMENSIONS], int currentX, int currentY, int
 
 void printMatrix(char matrix[][DIMENSIONS]);
 
-bool encounterDanger();
+bool encounterDanger(int &gongs);
 
-void checkEndGame(int currentX, int currentY);
+void checkEndGame(int currentX, int currentY, int gongs);
 
 bool isFightWon();
+
+void restartGame();
 
 using namespace std;
 const int ASCII_ZERO_CODE = 48;
@@ -57,7 +60,7 @@ int main() {
         }
 
     }
-    return 0;
+
 }
 
 void printRules() {
@@ -93,37 +96,39 @@ void printRules() {
 
 void startGame() {
     char matrix[DIMENSIONS][DIMENSIONS];
-    char mobMatrix[DIMENSIONS][DIMENSIONS] = {};
-
+    char mobMatrix[DIMENSIONS][DIMENSIONS] = {0};
+    memset (mobMatrix, 0, sizeof(mobMatrix) );
+    int gongs = 12;
     initGameMatrix(matrix);
 
     printMatrix(matrix);
     populateMobMatrix(mobMatrix);
-    cout << "Gongs left: 12" << endl;
+
     int currentX = 0;
     int currentY = 0;
-    int nextX = 0;
-    int nextY = 0;
+    int nextX;
+    int nextY;
     char nextInput[2];
     while (true) {
+        cout << "Gongs left: " << gongs << endl;
         cout << "Enter next cell (row & column): " << endl;
         cin >> nextInput[0] >> nextInput[1];
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         nextX = (nextInput[0]) - ASCII_ZERO_CODE;
         nextY = (nextInput[1]) - ASCII_ZERO_CODE;
-        if(nextX==currentX&&nextY==currentY){
-            cout<< "Wake up! You have to move on..."<<endl;
+        if (nextX == currentX && nextY == currentY) {
+            cout << "Wake up! You have to move on..." << endl;
             continue;
         }
-        if (nextX - currentX > 1 || nextY - currentY > 1||
-        currentX - nextX > 1 || currentY - nextY >1) {
+        if (nextX - currentX > 1 || nextY - currentY > 1 ||
+            currentX - nextX > 1 || currentY - nextY > 1) {
             cout << "Nice try! You can move to adjacent cells only." << endl;
 
             continue;
         }
         bool advance = true;
         if (mobMatrix[nextX][nextY] == 'D') {
-            advance = encounterDanger();
+            advance = encounterDanger(gongs);
 
         }
         if (advance) {
@@ -132,17 +137,20 @@ void startGame() {
             currentX = nextX;
             currentY = nextY;
             mobMatrix[currentX][currentY] = 0;
-            checkEndGame(currentX, currentY);
+
+            gongs = gongs - 1;
+
         }
+        checkEndGame(currentX, currentY, gongs);
         printMatrix(matrix);
     }
 
 }
 
-bool encounterDanger() {
+bool encounterDanger(int &gongs) {
     int mobType = rand() % 4;
     string dangerName[] = {"Hungry Alligator", "Swarm of Giant Mosquitos", "Venomous Spider", "Python"};
-    char dangerFill[] = {'A', 'M', 'S', 'P'};
+
     const string &currentDanger = dangerName[mobType];
     cout << "Watch out! There is a " << currentDanger << " ahead." << endl;
     cout << "Choose your next move." << endl;
@@ -150,24 +158,28 @@ bool encounterDanger() {
     cout << "2. Wait" << endl;
 
     char userChoice;
-    while(true) {
+    while (true) {
         cin >> userChoice;
 
         switch (userChoice) {
             case '1':
                 if (isFightWon()) {
                     cout << "You fight the " << currentDanger << " And win.. You advance." << endl;
+                    gongs -= 1;
                     return true;
                 } else {
                     cout << "You fight the " << currentDanger << " And lose...Retreat." << endl;
+                    gongs -= 3;
                     return false;
                 }
 
             case '2':
                 cout << currentDanger << " Is gone... You advance." << endl;
+                gongs -= 4;
+
                 return true;
             default:
-                cout<<"Invalid input."<<endl;
+                cout << "Invalid input." << endl;
         }
     }
 
@@ -179,11 +191,37 @@ bool isFightWon() {
     return rand() % 2 > 0;
 }
 
-void checkEndGame(int currentX, int currentY) {
+void checkEndGame(int currentX, int currentY, int gongs) {
     if (currentX == DIMENSIONS - 1 && currentY == DIMENSIONS - 1) {
         cout << "You win!" << endl;
-        exit(0);
+        cout<<" Play again? (y/n)"<<endl;
+        restartGame();
 
+
+    }
+    if (gongs <= 0) {
+        cout << "You are out of time!"<<endl;
+         cout<< "You lose! Try again? (y/n)" << endl;
+        restartGame();
+    }
+}
+
+void restartGame() {
+    char input;
+    while (true) {
+        cin >> input;
+        switch (input) {
+            case 'y':
+                startGame();
+                break;
+            case 'n':
+                exit(0);
+
+            default :
+                cout << "Incorrect input..." << endl;
+                break;
+
+        }
     }
 }
 
@@ -215,13 +253,20 @@ void updateGameMatrix(char matrix[][DIMENSIONS], int currentX, int currentY, int
 void populateMobMatrix(char mobMatrix[][DIMENSIONS]) {
 
     int randomNumbers[23];
-    for (int i = 1; i < 24; i++) {
-        randomNumbers[i] = i;
+    //create array with numbers from 1 to 23
+    for (int i = 0; i < 23; i++) {
+        randomNumbers[i] = i + 1;
     }
-    random_shuffle(&randomNumbers[0], &randomNumbers[22]);
+
+    // get time-based seed
+    unsigned seed = std::chrono::system_clock::now()
+            .time_since_epoch()
+            .count();
+    //randomize elements of randomNumbers
+    shuffle(&randomNumbers[0], &randomNumbers[22], default_random_engine(seed));
+    //take first 10 random numbers and turn them into matrix indexes
     for (int i = 0; i < MOB_NUMBER; i++) {
         mobMatrix[randomNumbers[i] / DIMENSIONS][randomNumbers[i] % DIMENSIONS] = 'D';
-
     }
 
 }
